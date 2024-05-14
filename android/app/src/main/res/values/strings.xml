@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Agro</string>
+    <string name="facebook_app_id">2079852825727885</string>
+    <string name="fb_login_protocol_scheme">fb24ac27a3a1591722473d7e9c3973bdb4</string>
+    
+</resources>
