@@ -14,8 +14,19 @@ void main() async {
   runApp(const ProviderScope(child: App()));
 }
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({super.key});
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  @override
+  void initState() {
+    super.initState();
+    print('user ${FirebaseAuth.instance.currentUser}');
+  }
 
   @override
   Widget build(BuildContext context) {

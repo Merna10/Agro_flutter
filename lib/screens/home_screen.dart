@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crops/screens/auth.dart';
 import 'package:crops/screens/predict_screen.dart';
-import 'package:crops/screens/profile.dart';
+import 'package:crops/widgets/profile.dart';
 import 'package:crops/screens/search.dart';
 import 'package:crops/screens/categories.dart';
 import 'package:crops/screens/new_post.dart';
@@ -75,14 +76,16 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () async {
                 User? user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
-                  DocumentSnapshot userData = await FirebaseFirestore.instance
+                  await FirebaseFirestore.instance
                       .collection('users')
                       .doc(user.uid)
                       .get();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => UserProfile(userData: userData),
+                      builder: (context) => SpecificUserWidget(
+                        userId: user.uid,
+                      ),
                     ),
                   );
                 }
@@ -114,6 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('LogOut'),
               onTap: () {
                 FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const AuthScreen()),
+                );
               },
             ),
           ],

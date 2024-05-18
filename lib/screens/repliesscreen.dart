@@ -183,7 +183,7 @@ class _ReplyScreenState extends State<ReplyScreen> {
                             userSnapshot.data!.data() as Map<String, dynamic>;
                         String commenterName =
                             userData['username'] ?? 'Unknown';
-                        String commenterImage = userData['image_url'] ?? '';
+                        String commenterImage = userData['userImage'] ?? '';
 
                         return ListTile(
                           title: Column(

@@ -1,4 +1,5 @@
-import 'package:crops/screens/profile.dart';
+import 'package:crops/models/user.dart';
+import 'package:crops/screens/user_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,11 +20,22 @@ class _SearchScreenState extends State<SearchScreen> {
     if (query.isNotEmpty) {
       FirebaseFirestore.instance
           .collection('users')
-          .where('username', isGreaterThanOrEqualTo: query)
           .get()
           .then((QuerySnapshot querySnapshot) {
+        final List<DocumentSnapshot> filteredResults = [];
+
+        querySnapshot.docs.forEach((userSnapshot) {
+          var userData = userSnapshot.data() as Map<String, dynamic>;
+          String username = userData['username'] ?? '';
+
+          // Perform a case-insensitive check
+          if (username.toLowerCase().contains(query.toLowerCase())) {
+            filteredResults.add(userSnapshot);
+          }
+        });
+
         setState(() {
-          _searchResults = querySnapshot.docs;
+          _searchResults = filteredResults;
         });
       });
     } else {
@@ -34,10 +46,18 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _navigateToUserProfile(DocumentSnapshot userSnapshot) {
+    var userData = userSnapshot.data() as Map<String, dynamic>;
+    Users user = Users(
+      username: userData['username'],
+      email: userData['email'],
+      userImage: userData['userImage'],
+    );
+    String userID = userSnapshot.id;
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => UserProfile(userData: userSnapshot),
+        builder: (context) => UserProfile(user: user, userID: userID),
       ),
     );
   }
@@ -92,7 +112,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     _searchResults[index].data() as Map<String, dynamic>?;
                 return ListTile(
                   title: Text(userData?['username'] ?? 'No Username'),
-                  subtitle: Text(userData?['email'] ?? 'No Email'),
+                  leading: Image.network(
+                    userData?['userImage'],
+                    height: 50,
+                    width: 50,
+                  ),
                   onTap: () {
                     _navigateToUserProfile(_searchResults[index]);
                   },

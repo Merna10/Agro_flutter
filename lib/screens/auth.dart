@@ -1,10 +1,10 @@
-
+import 'package:crops/models/user.dart';
+import 'package:crops/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sign_button/sign_button.dart';
-import 'package:transparent_image/transparent_image.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 final _firebase = FirebaseAuth.instance;
@@ -19,11 +19,12 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  var isLogin = true;
+  var _isLogin = true;
   final _form = GlobalKey<FormState>();
-  var _enteredEmail = '';
-  var _enteredPassword = '';
-  var _enteredUsername = '';
+
+  final TextEditingController _enteredEmail = TextEditingController();
+  final TextEditingController _enteredPassword = TextEditingController();
+  final TextEditingController _enteredUsername = TextEditingController();
 
   final String _defaultAvatar =
       'https://firebasestorage.googleapis.com/v0/b/basic-8dee0.appspot.com/o/user_images%2FR.png?alt=media&token=f758be71-1c2b-4fd4-97e9-e8f279a346dc';
@@ -32,42 +33,72 @@ class _AuthScreenState extends State<AuthScreen> {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   Future<void> _submit() async {
-    _form.currentState!.save();
-    try {
-      setState(() {
-        _isAuthenticating = true;
-      });
-      if (isLogin) {
-        await _firebase.signInWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
-      } else {
-        final userCredentials = await _firebase.createUserWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
+    if (!_form.currentState!.validate()) {
+      return;
+    }
 
-        // Send verification email
-        await userCredentials.user!.sendEmailVerification();
+    _form.currentState!.save();
+
+    setState(() {
+      _isAuthenticating = true;
+    });
+
+    try {
+      if (_isLogin) {
+        final UserCredential userCredential =
+            await _firebaseAuth.signInWithEmailAndPassword(
+          email: _enteredEmail.text,
+          password: _enteredPassword.text,
+        );
+
+        if (userCredential.user!.emailVerified) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email not verified. Please check your email.'),
+            ),
+          );
+        }
+      } else {
+        final UserCredential userCredential =
+            await _firebaseAuth.createUserWithEmailAndPassword(
+          email: _enteredEmail.text,
+          password: _enteredPassword.text,
+        );
+
+        await userCredential.user!.sendEmailVerification();
+
+        Users user = Users(
+          email: _enteredEmail.text,
+          username: _enteredUsername.text,
+          userImage: _defaultAvatar,
+        );
 
         await FirebaseFirestore.instance
             .collection('users')
-            .doc(userCredentials.user!.uid)
-            .set({
-          'username': _enteredUsername,
-          'email': _enteredEmail,
-          'image_url': _defaultAvatar,
-        });
-        setState(() {
-          _isAuthenticating = false;
-        });
+            .doc(userCredential.user!.uid)
+            .set(user.toMap());
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Verification email sent. Please verify your email before logging in.'),
+          ),
+        );
       }
     } on FirebaseAuthException catch (error) {
-      if (error.code == 'email-already-in-use') {}
-
-      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error.message ?? 'Authentication failed.'),
         ),
       );
+    } finally {
       setState(() {
         _isAuthenticating = false;
       });
@@ -90,20 +121,35 @@ class _AuthScreenState extends State<AuthScreen> {
         final User? user = userCredential.user;
 
         if (user != null) {
-          // Store user information in Firestore
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({
-            'username': user.displayName,
-            'email': user.email,
-            'image_url': _defaultAvatar,
-          });
+          final userDoc =
+              FirebaseFirestore.instance.collection('users').doc(user.uid);
+          final userSnapshot = await userDoc.get();
+
+          if (!userSnapshot.exists) {
+            Users newUser = Users(
+              email: user.email!,
+              username: user.displayName ?? 'User',
+              userImage: user.photoURL ?? _defaultAvatar,
+            );
+
+            await userDoc.set(newUser.toMap());
+          }
+
+          // Navigate to HomeScreen or wherever needed
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HomeScreen(),
+            ),
+          );
         }
-      } else {
-        // Handle sign-in cancellation
       }
-    } catch (error) {//
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In failed: ${error.toString()}'),
+        ),
+      );
     }
   }
 
@@ -148,41 +194,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                     fontSize: 80, color: Colors.white),
                               ),
                             ),
-                            if (!isLogin)
-                              FadeInImage.memoryNetwork(
-                                placeholder: kTransparentImage,
-                                image: _defaultAvatar,
-                                height: 200,
-                                width: 100,
-                              ),
-                            if (!isLogin)
-                              TextFormField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Username',
-                                  labelStyle: TextStyle(
-                                      color: Color.fromRGBO(255, 255, 255, 1),
-                                      fontSize: 20),
-                                  enabledBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.white),
-                                  ),
-                                  focusedBorder: UnderlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.white),
-                                  ),
-                                ),
-                                enableSuggestions: false,
-                                validator: (value) {
-                                  if (value == null ||
-                                      value.isEmpty ||
-                                      value.trim().length < 4) {
-                                    return 'Please enter at least 4 characters.';
-                                  }
-                                  return null;
-                                },
-                                style: const TextStyle(color: Colors.white),
-                                onSaved: (value) {
-                                  _enteredUsername = value!;
-                                },
-                              ),
                             TextFormField(
                               decoration: const InputDecoration(
                                 labelText: 'Email Address',
@@ -208,7 +219,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 return null;
                               },
                               onSaved: (value) {
-                                _enteredEmail = value!;
+                                _enteredEmail.text = value!;
                               },
                             ),
                             TextFormField(
@@ -232,9 +243,40 @@ class _AuthScreenState extends State<AuthScreen> {
                                 return null;
                               },
                               onSaved: (value) {
-                                _enteredPassword = value!;
+                                _enteredPassword.text = value!;
                               },
                             ),
+                            if (!_isLogin)
+                              TextFormField(
+                                textCapitalization: TextCapitalization.words,
+                                decoration: const InputDecoration(
+                                  labelText: 'Username',
+                                  labelStyle: TextStyle(
+                                      color: Color.fromRGBO(255, 255, 255, 1),
+                                      fontSize: 20),
+                                  enabledBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.white),
+                                  ),
+                                  focusedBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.white),
+                                  ),
+                                ),
+                                enableSuggestions: false,
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.isEmpty ||
+                                      value.trim().length < 4) {
+                                    return 'Please enter at least 4 characters.';
+                                  }
+                                  return null;
+                                },
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                ),
+                                onSaved: (value) {
+                                  _enteredUsername.text = value!;
+                                },
+                              ),
                             const SizedBox(height: 12),
                             if (_isAuthenticating)
                               const CircularProgressIndicator(),
@@ -242,6 +284,8 @@ class _AuthScreenState extends State<AuthScreen> {
                               ElevatedButton(
                                 onPressed: _submit,
                                 style: ButtonStyle(
+                                  minimumSize: MaterialStateProperty.all<Size>(
+                                      const Size(235.0, 20.0)),
                                   backgroundColor: MaterialStateProperty.all<
                                           Color>(
                                       const Color.fromARGB(255, 231, 232, 233)),
@@ -260,12 +304,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                   shape:
                                       MaterialStateProperty.all<OutlinedBorder>(
                                     RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(35),
                                     ),
                                   ),
                                 ),
                                 child: Text(
-                                  isLogin ? 'Login' : 'Signup',
+                                  _isLogin ? 'Login' : 'Signup',
                                 ),
                               ),
                             SignInButton(
@@ -276,11 +320,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               TextButton(
                                 onPressed: () {
                                   setState(() {
-                                    isLogin = !isLogin;
+                                    _isLogin = !_isLogin;
                                   });
                                 },
                                 child: Text(
-                                  isLogin
+                                  _isLogin
                                       ? 'Create an account'
                                       : 'I already have an account',
                                   style: const TextStyle(

@@ -1,5 +1,5 @@
-import 'package:crops/screens/addcomment.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crops/screens/comment_list.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -145,7 +145,7 @@ class _LikeButtonState extends State<LikeButton> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AddCommentScreen(
+                            builder: (context) => CommentScreen(
                               postId: widget.postId,
                               userId: FirebaseAuth.instance.currentUser!.uid,
                             ),

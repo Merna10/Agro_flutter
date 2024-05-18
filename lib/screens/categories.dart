@@ -11,11 +11,12 @@ class CropsCategoryItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    AsyncValue<QuerySnapshot> userDataAsync = ref.watch(getUserData);
+    AsyncValue<QuerySnapshot> categoriesDataAsync =
+        ref.watch(getGategoriesData);
 
     return Center(
       child: Scaffold(
-        body: userDataAsync.when(
+        body: categoriesDataAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stackTrace) => Center(child: Text('Error: $error')),
           data: (snapshot) {
