@@ -1,4 +1,5 @@
 import 'package:crops/firebase_options.dart';
+import 'package:crops/providers/theme_provider.dart';
 import 'package:crops/screens/auth.dart';
 import 'package:crops/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,20 +31,28 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: StreamBuilder(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Text('Loading');
-          }
-          if (!snapshot.hasData) {
-            return const AuthScreen();
-          }
-          return const HomeScreen();
-        },
-      ),
+    return Consumer(
+      builder: (context, ref, child) {
+        final themeMode = ref.watch(themeProvider);
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          themeMode: themeMode,
+          home: StreamBuilder(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData) {
+                return const AuthScreen();
+              }
+              return const HomeScreen();
+            },
+          ),
+        );
+      },
     );
   }
 }

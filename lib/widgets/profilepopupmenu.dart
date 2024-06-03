@@ -22,13 +22,12 @@ class ProfilePopupMenu extends StatelessWidget {
       builder: (BuildContext context) {
         if (userID == FirebaseAuth.instance.currentUser?.uid) {
           return PopupMenuButton<String>(
-            color: HexColor('#ffffff'),
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
                 value: 'editProfile',
                 child: ListTile(
                   leading: Icon(Icons.edit),
-                  title: Text('Edit'),
+                  title: Text('Edit Profile'),
                 ),
               ),
               const PopupMenuItem<String>(

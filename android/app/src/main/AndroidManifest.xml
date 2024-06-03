@@ -4,7 +4,7 @@
 
 
     <application
-        android:label="crops"
+        android:label="Agro"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         

@@ -99,7 +99,7 @@ class _EditPostScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Post'),
+        title: const Text('Update Profile'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -114,7 +114,7 @@ class _EditPostScreenState extends State<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                "Edit User Name:",
+                "Update User Name:",
                 style: TextStyle(
                   fontSize: 17,
                   fontFamily: 'Georgia',
@@ -136,7 +136,7 @@ class _EditPostScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                "Edit Profile picture ",
+                "Change Profile picture ",
                 style: TextStyle(
                   fontSize: 17,
                   fontFamily: 'Georgia',
@@ -147,12 +147,13 @@ class _EditPostScreenState extends State<EditProfileScreen> {
               _imageFile != null
                   ? Image.file(
                       _imageFile!,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       height: 200,
                     )
                   : FadeInImage.memoryNetwork(
                       placeholder: kTransparentImage,
                       image: widget.userImage ?? '',
+                      fit: BoxFit.contain,
                       height: 200,
                       width: 100,
                     ),
@@ -191,7 +192,7 @@ class _EditPostScreenState extends State<EditProfileScreen> {
                           "Camera",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color.fromARGB(116, 158, 158, 158),
+                            color: Color.fromARGB(255, 155, 152, 152),
                           ),
                         ),
                       ],
@@ -227,7 +228,7 @@ class _EditPostScreenState extends State<EditProfileScreen> {
                           "Photos/Gallery",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Color.fromARGB(255, 164, 200, 169),
+                            color: Color.fromARGB(255, 155, 152, 152),
                           ),
                         ),
                       ],

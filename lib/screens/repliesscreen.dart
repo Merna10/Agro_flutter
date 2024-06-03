@@ -1,7 +1,9 @@
 import 'dart:io';
 
-import 'package:uuid/uuid.dart';
+import 'package:crops/widgets/commentpopupmenu.dart';
+import 'package:crops/widgets/image_grid.dart';
 import 'package:crops/widgets/image_viewer.dart';
+import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +13,8 @@ import 'package:image_picker/image_picker.dart';
 class ReplyScreen extends StatefulWidget {
   final String commentId, postId;
 
-  const ReplyScreen({super.key, required this.commentId, required this.postId});
+  const ReplyScreen({Key? key, required this.commentId, required this.postId})
+      : super(key: key);
 
   @override
   State<ReplyScreen> createState() => _ReplyScreenState();
@@ -133,281 +136,129 @@ class _ReplyScreenState extends State<ReplyScreen> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder(
-              stream: FirebaseFirestore.instance
-                  .collection('posts')
-                  .doc(widget.postId)
-                  .collection('comments')
-                  .doc(widget.commentId)
-                  .collection('replies')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('No replies yet.'));
-                }
-                return ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final replyData = snapshot.data!.docs[index];
-                    List<String> repliesImagesUrl = [];
-                    if (replyData['repliesImages'] != null &&
-                        (replyData['repliesImages'] as List).isNotEmpty) {
-                      repliesImagesUrl =
-                          List<String>.from(replyData['repliesImages']);
-                    }
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(replyData['userId'])
-                          .get(),
-                      builder: (context,
-                          AsyncSnapshot<DocumentSnapshot> userSnapshot) {
-                        if (userSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        } else if (userSnapshot.hasError) {
-                          return const Text('Error fetching user data');
-                        } else if (!userSnapshot.hasData ||
-                            !userSnapshot.data!.exists) {
-                          return const Text('User data not found');
-                        }
+            child: SingleChildScrollView(
+              child: StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection('posts')
+                    .doc(widget.postId)
+                    .collection('comments')
+                    .doc(widget.commentId)
+                    .collection('replies')
+                    .orderBy('timestamp', descending: true)
+                    .snapshots(),
+                builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (snapshot.hasData && snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('No replies yet.'));
+                  }
+                  return Column(
+                    children: [
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: snapshot.data!.docs.length,
+                        itemBuilder: (context, index) {
+                          final replyData = snapshot.data!.docs[index];
+                          List<String> repliesImagesUrl = [];
+                          if (replyData['repliesImages'] != null &&
+                              (replyData['repliesImages'] as List).isNotEmpty) {
+                            repliesImagesUrl =
+                                List<String>.from(replyData['repliesImages']);
+                          }
+                          return FutureBuilder<DocumentSnapshot>(
+                            future: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(replyData['userId'])
+                                .get(),
+                            builder: (context,
+                                AsyncSnapshot<DocumentSnapshot> userSnapshot) {
+                              if (userSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const CircularProgressIndicator();
+                              } else if (userSnapshot.hasError) {
+                                return const Text('Error fetching user data');
+                              } else if (!userSnapshot.hasData ||
+                                  !userSnapshot.data!.exists) {
+                                return const Text('User data not found');
+                              }
 
-                        var userData =
-                            userSnapshot.data!.data() as Map<String, dynamic>;
-                        String commenterName =
-                            userData['username'] ?? 'Unknown';
-                        String commenterImage = userData['userImage'] ?? '';
+                              var userData = userSnapshot.data!.data()
+                                  as Map<String, dynamic>;
+                              String commenterName =
+                                  userData['username'] ?? 'Unknown';
+                              String commenterImage =
+                                  userData['userImage'] ?? '';
 
-                        return ListTile(
-                          title: Column(
-                            children: [
-                              Container(
-                                width: MediaQuery.sizeOf(context).width,
-                                padding: const EdgeInsets.all(15),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: const Color.fromARGB(
-                                        42, 158, 158, 158)),
-                                child: Stack(
-                                  children: [
-                                    if (replyData['userId'] ==
-                                        FirebaseAuth.instance.currentUser?.uid)
-                                      Positioned(
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            PopupMenuButton<String>(
-                                              itemBuilder:
-                                                  (BuildContext context) =>
-                                                      <PopupMenuEntry<String>>[
-                                                const PopupMenuItem<String>(
-                                                  value: 'edit',
-                                                  child: ListTile(
-                                                    leading: Icon(Icons.edit),
-                                                    title: Text('Edit'),
-                                                  ),
-                                                ),
-                                                const PopupMenuItem<String>(
-                                                  value: 'delete',
-                                                  child: ListTile(
-                                                    leading: Icon(Icons.delete),
-                                                    title: Text('Delete'),
-                                                  ),
-                                                ),
-                                              ],
-                                              onSelected: (String value) {
-                                                if (value == 'edit') {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (BuildContext context) {
-                                                      String updatedText = '';
-                                                      return AlertDialog(
-                                                        title: const Text(
-                                                            'Edit Comment'),
-                                                        content: TextField(
-                                                          textCapitalization:
-                                                              TextCapitalization
-                                                                  .sentences,
-                                                          maxLines: null,
-                                                          textInputAction:
-                                                              TextInputAction
-                                                                  .newline,
-                                                          onChanged: (value) {
-                                                            updatedText = value;
-                                                          },
-                                                        ),
-                                                        actions: <Widget>[
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              Navigator.of(
-                                                                      context)
-                                                                  .pop();
-                                                            },
-                                                            child: const Text(
-                                                                'Cancel'),
-                                                          ),
-                                                          TextButton(
-                                                            onPressed: () {
-                                                              _editComment(
-                                                                  replyData.id,
-                                                                  updatedText);
-                                                              Navigator.of(
-                                                                      context)
-                                                                  .pop();
-                                                            },
-                                                            child: const Text(
-                                                                'Save'),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-                                                } else if (value == 'delete') {
-                                                  deleteReply(replyData.id);
-                                                }
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    Text(
-                                      replyData['text'] ?? '',
-                                      style: const TextStyle(fontSize: 17),
+                              return ListTile(
+                                title: Column(children: [
+                                  Container(
+                                    width: MediaQuery.sizeOf(context).width,
+                                    padding: const EdgeInsets.only(
+                                        bottom: 15, left: 15, top: 15),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: const Color.fromARGB(
+                                          42, 158, 158, 158),
                                     ),
-                                  ],
-                                ),
-                              ),
-                              if (repliesImagesUrl.isNotEmpty)
-                                repliesImagesUrl.length == 1
-                                    ? GestureDetector(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => ImageViewer(
-                                                imageUrls: repliesImagesUrl,
-                                                initialIndex: 0,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: Container(
-                                          margin: const EdgeInsets.all(4),
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            child: Image.network(
-                                              repliesImagesUrl.first,
-                                              width: MediaQuery.sizeOf(context)
-                                                  .width,
-                                              height: MediaQuery.sizeOf(context)
-                                                      .height *
-                                                  0.18,
-                                              fit: BoxFit.fitWidth,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    : GestureDetector(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => ImageViewer(
-                                                imageUrls: repliesImagesUrl,
-                                                initialIndex: 0,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: GridView.builder(
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                          gridDelegate:
-                                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: 2,
-                                            crossAxisSpacing: 4,
-                                            mainAxisSpacing: 4,
-                                          ),
-                                          itemCount: repliesImagesUrl.length > 2
-                                              ? 2
-                                              : repliesImagesUrl.length,
-                                          itemBuilder: (context, index) {
-                                            return Container(
-                                              margin: const EdgeInsets.all(4),
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                                child: Image.network(
-                                                  repliesImagesUrl[index],
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
+                                    child: Column(
+                                      children: [
+                                        GestureDetector(
+                                          onLongPressStart:
+                                              (LongPressStartDetails details) {
+                                            // Access details here, such as details.globalPosition
+                                            showRepliesPopupMenu(
+                                              context,
+                                              details.globalPosition,
+                                              replyData['userId'],
+                                              widget.postId,
+                                              widget.commentId,
+                                              replyData.id,
+                                              replyData['text'],
+                                              repliesImagesUrl,
+                                              replyData['userId'],
                                             );
                                           },
+                                          child: Text(
+                                            replyData['text'],
+                                            style: const TextStyle(
+                                              fontSize: 17,
+                                              overflow: TextOverflow.visible,
+                                            ),
+                                            maxLines: null,
+                                          ),
                                         ),
-                                      ),
-                              if (repliesImagesUrl.length > 2)
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ImageViewer(
-                                          imageUrls: repliesImagesUrl,
-                                          initialIndex: 0,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    margin: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '+${repliesImagesUrl.length - 2}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                      ],
                                     ),
                                   ),
+                                  ImageGrid(
+                                      imageUrls: repliesImagesUrl, index: 0),
+                                ]),
+                                leading: Image.network(
+                                  commenterImage,
+                                  height: 50,
+                                  width: 50,
                                 ),
-                            ],
-                          ),
-                          leading: Image.network(
-                            commenterImage,
-                            height: 50,
-                            width: 50,
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  ' $commenterName -${_formatTimestamp(replyData['timestamp'])}'),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        ' $commenterName -${_formatTimestamp(replyData['timestamp'])}'),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
           Padding(
@@ -477,16 +328,14 @@ class _ReplyScreenState extends State<ReplyScreen> {
                                       size: 23,
                                     ),
                               const SizedBox(width: 10),
-                              Text(value,
-                                  style: const TextStyle(
-                                      color: Colors.black, fontSize: 15)),
+                              Text(value, style: const TextStyle(fontSize: 15)),
                             ],
                           ),
                         );
                       }).toList(),
                     ),
                     const SizedBox(
-                      width: 76,
+                      width: 36,
                     ),
                     ElevatedButton(
                       onPressed: () async {

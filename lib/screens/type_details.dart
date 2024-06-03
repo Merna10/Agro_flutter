@@ -16,13 +16,12 @@ class TypesDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: HexColor("#F5FBF4"),
         title: Text(
           crop.title,
           style: GoogleFonts.aBeeZee(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: HexColor("#333333"),
+            color: Color.fromARGB(255, 26, 115, 44),
           ),
         ),
         centerTitle: true,

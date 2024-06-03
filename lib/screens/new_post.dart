@@ -70,7 +70,7 @@ class _NewPostState extends State<NewPost> {
       }
 
       Post newPost = Post(
-        postId: '', // Placeholder, Firestore will auto-generate the ID
+        postId: '',
         text: _postController.text.trim(),
         createdAt: Timestamp.now(),
         userId: currentUser.uid,
@@ -83,7 +83,6 @@ class _NewPostState extends State<NewPost> {
           .collection('posts')
           .add(newPost.toMap());
 
-      // Update the new post with the generated ID
       await postRef.update({'postId': postRef.id});
 
       _postController.clear();
@@ -186,8 +185,9 @@ class _NewPostState extends State<NewPost> {
                         ),
                         SizedBox(width: 10),
                         Text('Camera',
-                            style:
-                                TextStyle(color: Colors.black, fontSize: 15)),
+                            style: TextStyle(
+                                color: Color.fromARGB(255, 155, 152, 152),
+                                fontSize: 15)),
                       ],
                     ),
                   ),
@@ -206,8 +206,9 @@ class _NewPostState extends State<NewPost> {
                         Icon(Icons.image, color: Colors.blue, size: 23),
                         SizedBox(width: 10),
                         Text('Gallery/Photos',
-                            style:
-                                TextStyle(color: Colors.black, fontSize: 15)),
+                            style: TextStyle(
+                                color: Color.fromARGB(255, 155, 152, 152),
+                                fontSize: 15)),
                       ],
                     ),
                   ),

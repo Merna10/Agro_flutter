@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hexcolor/hexcolor.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
@@ -29,6 +30,7 @@ class ImageUploader {
 
 class PredictScreen extends StatefulWidget {
   const PredictScreen({super.key});
+
   @override
   State<PredictScreen> createState() => _PredictScreenState();
 }
@@ -36,6 +38,7 @@ class PredictScreen extends StatefulWidget {
 class _PredictScreenState extends State<PredictScreen> {
   File? _imageFile;
   String? _prediction;
+  bool _isLoading = false;
 
   Future<void> pickImageAndUpload(
       BuildContext context, ImageSource source) async {
@@ -45,10 +48,13 @@ class _PredictScreenState extends State<PredictScreen> {
       setState(() {
         _imageFile = File(pickedFile.path);
         _prediction = null;
+        _isLoading = true;
       });
+
       String? prediction = await ImageUploader.uploadImage(_imageFile!);
       setState(() {
         _prediction = prediction;
+        _isLoading = false;
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -78,12 +84,11 @@ class _PredictScreenState extends State<PredictScreen> {
             if (_imageFile != null)
               Image.file(
                 _imageFile!,
-                width: 200,
-                height: 200,
+                height: MediaQuery.sizeOf(context).height * 0.5,
               )
             else
               const Text('No image selected'),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -125,14 +130,22 @@ class _PredictScreenState extends State<PredictScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            if (_prediction != null)
+            if (_isLoading)
+              const CircularProgressIndicator(
+                color: Color.fromARGB(255, 26, 115, 44),
+              )
+            else if (_prediction != null)
               Column(
                 children: [
-                  Text('Prediction: $_prediction'),
+                  Text(
+                    '$_prediction',
+                    style: const TextStyle(
+                      fontSize: 30,
+                      color: Color.fromARGB(255, 26, 115, 44),
+                    ),
+                  ),
                 ],
               )
-            else
-              const Text('Prediction will appear here'),
           ],
         ),
       ),

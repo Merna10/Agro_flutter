@@ -8,23 +8,23 @@ import 'package:crops/widgets/postpopupmenu.dart';
 import 'package:crops/widgets/profilepopupmenu.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:transparent_image/transparent_image.dart';
+import 'package:crops/providers/theme_provider.dart';
 
-class UserProfile extends StatefulWidget {
+class UserProfile extends ConsumerStatefulWidget {
   final Users user;
   final String userID;
 
   const UserProfile({super.key, required this.user, required this.userID});
 
   @override
-  State<UserProfile> createState() => _UserProfileState();
+  ConsumerState<UserProfile> createState() => _UserProfileState();
 }
 
-class _UserProfileState extends State<UserProfile> {
+class _UserProfileState extends ConsumerState<UserProfile> {
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   List userPosts = [];
@@ -58,11 +58,13 @@ class _UserProfileState extends State<UserProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = ref.watch(themeProvider.notifier);
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(32.0),
         child: AppBar(
-          backgroundColor: HexColor('#E7FEEB'),
           actions: [
             if (FirebaseAuth.instance.currentUser?.uid == widget.userID)
               Row(
@@ -88,23 +90,13 @@ class _UserProfileState extends State<UserProfile> {
       body: Container(
         height: MediaQuery.sizeOf(context).height,
         padding: const EdgeInsets.only(top: 15),
-        decoration: BoxDecoration(
-          color: HexColor('#E7FEEB'),
-        ),
         child: SingleChildScrollView(
           child: Center(
-            child: Container(
-              width: 380,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              child: Column(
-                children: [
-                  buildUserProfile(),
-                  buildUserPosts(),
-                ],
-              ),
+            child: Column(
+              children: [
+                buildUserProfile(),
+                buildUserPosts(),
+              ],
             ),
           ),
         ),
@@ -139,7 +131,7 @@ class _UserProfileState extends State<UserProfile> {
             widget.user.username,
             style: TextStyle(
               fontSize: 22,
-              color: HexColor('#1e3014'),
+              color: HexColor('#44ac5c'),
             ),
           ),
           const SizedBox(height: 2),
@@ -229,7 +221,10 @@ class _UserProfileState extends State<UserProfile> {
                         ),
                       const SizedBox(height: 3.0),
                       ImageGrid(imageUrls: post.postImages, index: index),
-                      LikeButton(postId: post.postId,userId:  FirebaseAuth.instance.currentUser?.uid ?? '',),
+                      LikeButton(
+                        postId: post.postId,
+                        userId: FirebaseAuth.instance.currentUser?.uid ?? '',
+                      ),
                     ],
                   );
                 },

@@ -105,6 +105,32 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    if (_enteredEmail.text.isEmpty || !_enteredEmail.text.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email address.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: _enteredEmail.text);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent. Check your inbox.'),
+        ),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${error.toString()}'),
+        ),
+      );
+    }
+  }
+
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   Future<void> _signInWithGoogle() async {
     try {
@@ -127,7 +153,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
           if (!userSnapshot.exists) {
             Users newUser = Users(
-              email: user.email!,
+              email: userCredential.user!.email!,
               username: user.displayName ?? 'User',
               userImage: user.photoURL ?? _defaultAvatar,
             );
@@ -135,7 +161,6 @@ class _AuthScreenState extends State<AuthScreen> {
             await userDoc.set(newUser.toMap());
           }
 
-          // Navigate to HomeScreen or wherever needed
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -210,6 +235,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               autocorrect: false,
                               textCapitalization: TextCapitalization.none,
                               style: const TextStyle(color: Colors.white),
+                              controller: _enteredEmail,
                               validator: (value) {
                                 if (value == null ||
                                     value.trim().isEmpty ||
@@ -217,9 +243,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                   return 'Please enter a valid email address.';
                                 }
                                 return null;
-                              },
-                              onSaved: (value) {
-                                _enteredEmail.text = value!;
                               },
                             ),
                             TextFormField(
@@ -236,14 +259,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                               obscureText: true,
                               style: const TextStyle(color: Colors.white),
+                              controller: _enteredPassword,
                               validator: (value) {
                                 if (value == null || value.trim().length < 6) {
                                   return 'Password must be at least 6 characters long.';
                                 }
                                 return null;
-                              },
-                              onSaved: (value) {
-                                _enteredPassword.text = value!;
                               },
                             ),
                             if (!_isLogin)
@@ -273,11 +294,17 @@ class _AuthScreenState extends State<AuthScreen> {
                                 style: const TextStyle(
                                   color: Colors.white,
                                 ),
-                                onSaved: (value) {
-                                  _enteredUsername.text = value!;
-                                },
+                                controller: _enteredUsername,
                               ),
                             const SizedBox(height: 12),
+                            if (_isLogin)
+                              TextButton(
+                                onPressed: _resetPassword,
+                                child: const Text(
+                                  'Forget Password?',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
                             if (_isAuthenticating)
                               const CircularProgressIndicator(),
                             if (!_isAuthenticating)
@@ -308,31 +335,25 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                   ),
                                 ),
-                                child: Text(
-                                  _isLogin ? 'Login' : 'Signup',
-                                ),
+                                child: Text(_isLogin ? 'Login' : 'Signup'),
                               ),
                             SignInButton(
                               buttonType: ButtonType.google,
                               onPressed: _signInWithGoogle,
                             ),
-                            if (!_isAuthenticating)
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isLogin = !_isLogin;
-                                  });
-                                },
-                                child: Text(
-                                  _isLogin
-                                      ? 'Create an account'
-                                      : 'I already have an account',
-                                  style: const TextStyle(
-                                    color: Color.fromARGB(255, 255, 255, 255),
-                                    fontSize: 16,
-                                  ),
-                                ),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isLogin = !_isLogin;
+                                });
+                              },
+                              child: Text(
+                                _isLogin
+                                    ? 'Create an account'
+                                    : 'I already have an account',
+                                style: const TextStyle(color: Colors.white),
                               ),
+                            ),
                           ],
                         ),
                       ),

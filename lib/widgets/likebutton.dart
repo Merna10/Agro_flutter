@@ -25,7 +25,8 @@ class _LikeButtonState extends State<LikeButton> {
     super.initState();
     _loadLikeStatus();
 
-    _getDocumentCount();
+    _getLikesCount();
+    _getCommentsCount();
   }
 
   Future<void> _loadLikeStatus() async {
@@ -48,8 +49,8 @@ class _LikeButtonState extends State<LikeButton> {
     }
   }
 
-  int _documentCount = 0;
-  Future<void> _getDocumentCount() async {
+  int _likesCount = 0;
+  Future<void> _getLikesCount() async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('posts')
         .doc(widget.postId)
@@ -57,7 +58,20 @@ class _LikeButtonState extends State<LikeButton> {
         .get();
 
     setState(() {
-      _documentCount = querySnapshot.size;
+      _likesCount = querySnapshot.size;
+    });
+  }
+
+  int _commentsCount = 0;
+  Future<void> _getCommentsCount() async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.postId)
+        .collection('comments')
+        .get();
+
+    setState(() {
+      _commentsCount = querySnapshot.size;
     });
   }
 
@@ -95,7 +109,8 @@ class _LikeButtonState extends State<LikeButton> {
         });
       }
     }
-    await _getDocumentCount();
+    await _getLikesCount();
+    await _getCommentsCount();
   }
 
   @override
@@ -107,56 +122,87 @@ class _LikeButtonState extends State<LikeButton> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          final likes = _documentCount;
+          final likes = _likesCount;
+          final comments = _commentsCount;
 
           bool isLiked = _isLiked;
           if (FirebaseAuth.instance.currentUser == null) {
             isLiked = false;
           }
 
-          return Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Divider(),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-                        color: isLiked ? Colors.green : null,
-                      ),
-                      onPressed: _toggleLike,
-                    ),
-                    Text('$likes Likes'),
-                  ],
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  '$likes Likes $comments Comments',
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 177, 198, 180),
+                    fontSize: 12,
+                  ),
                 ),
               ),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.comment,
-                        size: 25,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CommentScreen(
-                              postId: widget.postId,
-                              userId: FirebaseAuth.instance.currentUser!.uid,
+              const Divider(),
+              Row(
+                children: [
+                  const Divider(),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _toggleLike,
+                          icon: Icon(
+                            isLiked
+                                ? Icons.thumb_up
+                                : Icons.thumb_up_alt_outlined,
+                            color: isLiked
+                                ? Colors.green
+                                : const Color.fromARGB(255, 122, 126, 122),
+                          ),
+                          label: Text(
+                            isLiked ? ' Liked' : 'Like',
+                            style: TextStyle(
+                              color: isLiked
+                                  ? Colors.green
+                                  : const Color.fromARGB(255, 122, 126, 122),
                             ),
                           ),
-                        );
-                      },
+                        ),
+                        const SizedBox(
+                          width: 80,
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CommentScreen(
+                                  postId: widget.postId,
+                                  userId:
+                                      FirebaseAuth.instance.currentUser!.uid,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.comment,
+                            size: 20,
+                            color: const Color.fromARGB(255, 122, 126, 122),
+                          ),
+                          label: const Text(
+                            'Comment',
+                            style: TextStyle(
+                                color:
+                                    const Color.fromARGB(255, 122, 126, 122)),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const Divider(),
             ],
           );
         } else {

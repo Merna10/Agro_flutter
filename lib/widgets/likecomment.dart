@@ -130,7 +130,7 @@ class _LikeButtonCommentState extends State<LikeButtonComment> {
                   side: BorderSide.none,
                 ),
                 child: Text(
-                  '$likes Like',
+                  isLiked ? '$likes Liked' : '$likes Like',
                   style: TextStyle(
                     fontSize: 15,
                     color: isLiked

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crops/providers/posts_provider.dart';
-import 'package:crops/screens/add_comments.dart';
+import 'package:crops/widgets/add_comments.dart';
 import 'package:crops/screens/repliesscreen.dart';
-import 'package:crops/widgets/commentPopupMenu.dart';
+import 'package:crops/widgets/commentpopupmenu.dart';
 import 'package:crops/widgets/image_grid.dart';
 import 'package:crops/widgets/likebutton.dart';
 import 'package:crops/widgets/likecomment.dart';
@@ -13,6 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:transparent_image/transparent_image.dart';
 
+Map<String, dynamic> postData = {};
+String postOwnerId = '';
 final commentsStreamProvider =
     StreamProvider.autoDispose.family<QuerySnapshot, String>((ref, postId) {
   return FirebaseFirestore.instance
@@ -54,9 +56,9 @@ class CommentScreen extends ConsumerWidget {
                       if (!postSnapshot.exists) {
                         return const Center(child: Text('Post not found'));
                       }
-                      var postData =
-                          postSnapshot.data() as Map<String, dynamic>;
+                      postData = postSnapshot.data() as Map<String, dynamic>;
                       String postText = postData['text'] ?? '';
+                      postOwnerId = postData['userId'];
                       String postOwnerName = postData['username'] ?? 'Unknown';
                       String postOwnerImage = postData['userImage'] ?? '';
                       List<String> postImageUrl =
@@ -68,11 +70,15 @@ class CommentScreen extends ConsumerWidget {
                           Padding(
                             padding: const EdgeInsets.all(1.0),
                             child: ListTile(
-                              leading: FadeInImage.memoryNetwork(
-                                placeholder: kTransparentImage,
-                                image: postOwnerImage,
-                                height: 200,
-                                width: 100,
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(100),
+                                child: FadeInImage.memoryNetwork(
+                                  placeholder: kTransparentImage,
+                                  image: postOwnerImage,
+                                  height: 50,
+                                  width: 50,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                               title: Text(postOwnerName),
                               subtitle: Text(DateFormat('dd MMMM yyyy HH:mm')
@@ -96,6 +102,7 @@ class CommentScreen extends ConsumerWidget {
                             userId:
                                 FirebaseAuth.instance.currentUser?.uid ?? '',
                           ),
+                          const Divider(),
                           const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: Text('Comments:',
@@ -121,7 +128,7 @@ class CommentScreen extends ConsumerWidget {
                         itemCount: snapshot.docs.length,
                         itemBuilder: (context, index) {
                           final comment = snapshot.docs[index];
-                          return _buildCommentItem(context, comment);
+                          return _buildCommentItem(context, comment, postData);
                         },
                       );
                     },
@@ -141,7 +148,7 @@ class CommentScreen extends ConsumerWidget {
   }
 
   Widget _buildCommentItem(
-      BuildContext context, QueryDocumentSnapshot comment) {
+      BuildContext context, QueryDocumentSnapshot comment, postData) {
     String commenterId = comment['userId'];
     String commentText = comment['comment'];
     List<String> commentImageUrl =
@@ -167,40 +174,46 @@ class CommentScreen extends ConsumerWidget {
         String commenterImage = userData['userImage'] ?? '';
 
         return ListTile(
-          leading: FadeInImage.memoryNetwork(
-            placeholder: kTransparentImage,
-            image: commenterImage,
-            height: 50,
-            width: 50,
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: FadeInImage.memoryNetwork(
+              placeholder: kTransparentImage,
+              image: commenterImage,
+              height: 50,
+              width: 50,
+              fit: BoxFit.cover,
+            ),
           ),
           title: Column(children: [
-            Container(
-              width: MediaQuery.sizeOf(context).width,
-              padding: const EdgeInsets.only(bottom: 15, left: 15, top: 15),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: const Color.fromARGB(42, 158, 158, 158),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: CommmentPopupMenu(
-                      userId: commenterId,
-                      postId: postId,
-                      commentId: comment.id,
-                      commentText: commentText,
-                      imageUrls: commentImageUrl,
-                    ),
+            GestureDetector(
+              onLongPressStart: (LongPressStartDetails details) {
+                // Access details here, such as details.globalPosition
+                showCommentPopupMenu(
+                  context,
+                  details.globalPosition,
+                  commenterId,
+                  postId,
+                  comment.id,
+                  commentText,
+                  commentImageUrl,
+                  postOwnerId,
+                );
+              },
+              child: Container(
+                width: MediaQuery.sizeOf(context).width,
+                padding: const EdgeInsets.only(bottom: 15, left: 15, top: 15),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: const Color.fromARGB(42, 158, 158, 158),
+                ),
+                child: Text(
+                  commentText,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    overflow: TextOverflow.visible,
                   ),
-                  Text(
-                    commentText,
-                    style: const TextStyle(
-                        fontSize: 17, overflow: TextOverflow.visible),
-                    maxLines: null,
-                  ),
-                ],
+                  maxLines: null,
+                ),
               ),
             ),
             ImageGrid(imageUrls: commentImageUrl, index: 0),

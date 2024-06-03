@@ -150,16 +150,14 @@ class _AddCommentsState extends State<AddComments> {
                                 size: 23,
                               ),
                         const SizedBox(width: 10),
-                        Text(value,
-                            style: const TextStyle(
-                                color: Colors.black, fontSize: 15)),
+                        Text(value, style: const TextStyle(fontSize: 15)),
                       ],
                     ),
                   );
                 }).toList(),
               ),
-              const SizedBox(
-                width: 76,
+              SizedBox(
+                width: MediaQuery.sizeOf(context).width * 0.07,
               ),
               ElevatedButton(
                 onPressed: _addComment,

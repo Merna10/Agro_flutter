@@ -29,7 +29,6 @@ class ImageGrid extends StatelessWidget {
                 ? Container(
                     height: 250,
                     width: MediaQuery.of(context).size.width,
-                    margin: const EdgeInsets.all(4),
                     child: Image.network(
                       imageUrls.first,
                       fit: BoxFit.cover,
@@ -41,18 +40,15 @@ class ImageGrid extends StatelessWidget {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 4,
-                      mainAxisSpacing: 4,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 0,
                     ),
                     itemCount: imageUrls.length > 2 ? 2 : imageUrls.length,
                     itemBuilder: (context, index) {
-                      return Container(
-                        margin: const EdgeInsets.all(4),
-                        child: FadeInImage.memoryNetwork(
-                          placeholder: kTransparentImage,
-                          image: imageUrls[index],
-                          fit: BoxFit.cover,
-                        ),
+                      return FadeInImage.memoryNetwork(
+                        placeholder: kTransparentImage,
+                        image: imageUrls[index],
+                        fit: BoxFit.cover,
                       );
                     },
                   ),
@@ -71,7 +67,6 @@ class ImageGrid extends StatelessWidget {
               );
             },
             child: Container(
-              margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: Colors.black54,
                 borderRadius: BorderRadius.circular(10),

@@ -10,21 +10,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:crops/providers/theme_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
+
   final List<Widget> _widgetOptions = <Widget>[
     const PostsScreen(),
     const CropsCategoryItem(),
     const PredictScreen(),
   ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -33,6 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = ref.watch(themeProvider.notifier);
+    final isDarkMode = ref.watch(themeProvider) == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -83,9 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SpecificUserWidget(
-                        userId: user.uid,
-                      ),
+                      builder: (context) => SpecificUserWidget(userId: user.uid),
                     ),
                   );
                 }
@@ -112,6 +117,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               },
+            ),
+            ListTile(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Dark Mode'),
+                  Switch(
+                    value: isDarkMode,
+                    onChanged: (value) => themeNotifier.toggleTheme(),
+                  ),
+                ],
+              ),
             ),
             ListTile(
               title: const Text('LogOut'),
