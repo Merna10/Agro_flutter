@@ -161,12 +161,20 @@ class _AuthScreenState extends State<AuthScreen> {
             await userDoc.set(newUser.toMap());
           }
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
-            ),
-          );
+          if (user.emailVerified) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const HomeScreen(),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email not verified. Please check your email.'),
+              ),
+            );
+          }
         }
       }
     } catch (error) {
