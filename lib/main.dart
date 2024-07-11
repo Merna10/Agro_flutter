@@ -1,7 +1,8 @@
+import 'package:crops/app/routes/routes.dart';
 import 'package:crops/firebase_options.dart';
-import 'package:crops/providers/theme_provider.dart';
-import 'package:crops/screens/auth.dart';
-import 'package:crops/screens/home_screen.dart';
+import 'package:crops/app/providers/theme_provider.dart';
+import 'package:crops/features/auth/presentation/screens/auth.dart';
+import 'package:crops/app/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,8 @@ class _AppState extends State<App> {
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
           themeMode: themeMode,
+          initialRoute: '/',
+          onGenerateRoute: Routes.generateRoute,
           home: StreamBuilder(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
